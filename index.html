@@ -2,43 +2,43 @@
 .bar-container {
 	margin: 2px 0;
 }
+#graph-area {
+	position: relative;
+}
+#width-slider {
+	position: absolute;
+	left: 35px;
+	width: 690px;
+}
+#height-slider {
+	position: absolute;
+	top: 26px;
+	height: 39px;
+}
+#bars-container {
+	position: absolute;
+	top: 25px;
+	left: 25px;
+}
 </style>
 
 <p>Paste numbers, get bar graph PNGs.
 <p><textarea id="numbers" rows="8" data-bind="value: numbersString, valueUpdate: 'afterkeydown'"></textarea>
 <hr />
-<div id="bars2" data-bind="foreach: barImageDatas">
-	<div class="bar-container"><img data-bind="attr: { src: src }" /></div>
+<div id="graph-area">
+	<div id="width-slider"></div>
+	<div id="height-slider"></div>
+	<div id="bars-container" data-bind="foreach: barImages">
+		<div class="bar-container"><img data-bind="attr: { src: src }" /></div>
+	</div>
 </div>
 
-<script src="jquery.js"></script>
+<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" />
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
 <script src="pnglib.js"></script>
 <script src="knockout.js"></script>
 <script>
-var $numbers = $('#numbers');
-var $bars = $('#bars');
-
-var numbersString = ko.observable([10, 20, 30, 50, 90, 40].join('\n'));
-var numbers = ko.computed(function () {
-	return numbersString().split('\n').map(function (n) { return parseFloat(n) });
-});
-var maxNumber = ko.computed(function () {
-	return numbers().slice().filter(isFinite).sort(function (a, b) { return b-a })[0];
-});
-var imageDatas = ko.computed(function () {
-	var minvalue = 0, maxvalue = maxNumber();
-	var minbarwidth = 0, maxbarwidth = 200;
-	return numbers().map(function (n) {
-		var barwidth = minbarwidth + (n - minvalue) / (maxvalue - minvalue) * (maxbarwidth - minbarwidth);
-		return { src: barImageData(maxbarwidth, 10, barwidth) };
-	});
-});
-
-ko.applyBindings({
-	numbersString: numbersString,
-	barImageDatas: imageDatas,
-});
-
 function barImageData(width, height, barwidth) {
 	width = Math.max(Math.round(width), 1);
 	height = Math.max(Math.round(height), 1);
@@ -54,4 +54,38 @@ function barImageData(width, height, barwidth) {
 	return 'data:image/png;base64,'+p.getBase64();
 }
 
+var minValue = ko.observable(0);
+var minBarWidth = ko.observable(0), maxBarWidth = ko.observable(200);
+var inverseBarHeight = ko.observable(29);
+var barHeight = ko.computed(function () { return 40 - inverseBarHeight() });
+
+var numbersString = ko.observable([10, 20, 30, 50, 90, 40].join('\n'));
+var numbers = ko.computed(function () {
+	return numbersString().split('\n').map(function (n) { return parseFloat(n) });
+});
+var maxNumber = ko.computed(function () {
+	return numbers().slice().filter(isFinite).sort(function (a, b) { return b-a })[0];
+});
+var images = ko.computed(function () {
+	var minvalue = 0, maxvalue = maxNumber();
+	return numbers().map(function (n) {
+		var barwidth = minBarWidth() + (n - minvalue) / (maxvalue - minvalue) * (maxBarWidth() - minBarWidth());
+		return { src: barImageData(maxBarWidth(), barHeight(), barwidth) };
+	});
+});
+
+ko.applyBindings({
+	numbersString: numbersString,
+	barImages: images,
+});
+
+$(function () {
+	var slide = function (observable) {
+		return function () {
+			observable($(this).slider('value'));
+		};
+	};
+	$('#width-slider').slider({ min: 10, max: 700, value: 200, step: 10, slide: slide(maxBarWidth), change: slide(maxBarWidth) });
+	$('#height-slider').slider({ orientation: 'vertical', min: 0, max: 39, value: 29, step: 5, slide: slide(inverseBarHeight), change: slide(inverseBarHeight) });
+});
 </script>
