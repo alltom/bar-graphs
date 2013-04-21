@@ -7,6 +7,6 @@ bar-graphs
 Let's not see any more lecture slides with tables full of bare numbers.
 
 TODO
-===
+---
 
 Make this more usable. Pull requests welcome.
