@@ -4,7 +4,8 @@
 }
 </style>
 
-<textarea id="numbers">10
+<p>Paste numbers, get bar graph PNGs.
+<p><textarea id="numbers" rows="8">10
 20
 30
 50
@@ -22,25 +23,27 @@ var $bars = $('#bars');
 
 $numbers.on('input propertychange', function () {
 	var numbers = $(this).val().split('\n').map(function (n) { return parseFloat(n) });
-	var min = numbers.slice().sort(function (a, b) { return a-b })[0];
-	min = 0; // overruled!
-	var max = numbers.slice().sort(function (a, b) { return b-a })[0];
+	var min = 0;
+	var max = numbers.slice().filter(isFinite).sort(function (a, b) { return b-a })[0];
 	var barmin = 3, barmax = 200;
 	$bars.empty();
-	setTimeout(function () {
 	numbers.forEach(function (n) {
 		var $container = $('<div />').addClass('bar-container').appendTo($bars);
-		$container.append(barImage(barmin + (n - min) / (max - min) * (barmax - barmin), 10));
+		if (isFinite(n)) {
+			$container.append(barImage(barmin + (n - min) / (max - min) * (barmax - barmin), 10));
+		} else {
+			$container.css({ height: 10 });
+		}
 	});
-	}, 30);
 });
 $numbers.trigger('input');
 
 function barImage(width, height) {
-	var p = new PNGlib(Math.round(width), Math.round(height), 256); // construcor takes height, weight and color-depth
-	p.color(50, 50, 50, 50); // set the background
+	width = Math.max(Math.round(width), 1);
+	height = Math.max(Math.round(height), 1);
+	var p = new PNGlib(width, height, 256); // construcor takes height, weight and color-depth
+	p.color(200, 200, 200, 255); // set the background
 	return $('<img />').attr('src', 'data:image/png;base64,'+p.getBase64());
-	//document.write('<img src="data:image/png;base64,'+p.getBase64()+'">');
 }
 
 </script>
