@@ -2,6 +2,11 @@
 .bar-container {
 	margin: 2px 0;
 }
+#color-picker {
+	display: inline-block;
+	margin-bottom: 14px;
+	vertical-align: top;
+}
 #graph-area {
 	position: relative;
 }
@@ -24,7 +29,7 @@
 
 <p>Paste numbers, get bar graph PNGs.
 <p><textarea id="numbers" rows="8" data-bind="value: numbersString, valueUpdate: 'afterkeydown'"></textarea>
-<hr />
+<span id="color-picker"></span>
 <div id="graph-area">
 	<div id="width-slider"></div>
 	<div id="height-slider"></div>
@@ -33,13 +38,15 @@
 	</div>
 </div>
 
-<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="css/colorpicker.css" />
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
-<script src="pnglib.js"></script>
-<script src="knockout.js"></script>
+<script type="text/javascript" src="javascript/colorpicker/colorpicker.js"></script>
+<script type="text/javascript" src="javascript/pnglib.js"></script>
+<script type="text/javascript" src="javascript/knockout.js"></script>
 <script>
-function barImageData(width, height, barwidth) {
+function barImageData(width, height, barwidth, r, g, b) {
 	width = Math.max(Math.round(width), 1);
 	height = Math.max(Math.round(height), 1);
 	var p = new PNGlib(width, height, 256); // constructor takes height, weight and color-depth
@@ -47,7 +54,7 @@ function barImageData(width, height, barwidth) {
 	
 	for (var x = 0; x < barwidth; x++) {
 		for (var y = 0; y < height; y++) {
-			p.buffer[p.index(x, y)] = p.color(0xcc, 0xcc, 0xcc);
+			p.buffer[p.index(x, y)] = p.color(r, g, b);
 		}
 	}
 	
@@ -58,6 +65,7 @@ var minValue = ko.observable(0);
 var minBarWidth = ko.observable(0), maxBarWidth = ko.observable(200);
 var inverseBarHeight = ko.observable(29);
 var barHeight = ko.computed(function () { return 40 - inverseBarHeight() });
+var red = ko.observable(0xCC), green = ko.observable(0xCC), blue = ko.observable(0xCC);
 
 var numbersString = ko.observable([10, 20, 30, 50, 90, 40].join('\n'));
 var numbers = ko.computed(function () {
@@ -70,12 +78,13 @@ var images = ko.computed(function () {
 	var minvalue = 0, maxvalue = maxNumber();
 	return numbers().map(function (n) {
 		var barwidth = minBarWidth() + (n - minvalue) / (maxvalue - minvalue) * (maxBarWidth() - minBarWidth());
-		return { src: barImageData(maxBarWidth(), barHeight(), barwidth) };
+		return { src: barImageData(maxBarWidth(), barHeight(), barwidth, red(), green(), blue()) };
 	});
 });
 
 ko.applyBindings({
 	numbersString: numbersString,
+	red: red, green: green, blue: blue,
 	barImages: images,
 });
 
@@ -85,7 +94,14 @@ $(function () {
 			observable(ui.value);
 		};
 	};
-	$('#width-slider').slider({ min: 10, max: 700, value: 200, step: 10, slide: slide(maxBarWidth), change: slide(maxBarWidth) });
-	$('#height-slider').slider({ orientation: 'vertical', min: 0, max: 39, value: 29, step: 5, slide: slide(inverseBarHeight), change: slide(inverseBarHeight) });
+	$('#width-slider').slider({ min: 10, max: 700, value: 200, slide: slide(maxBarWidth), change: slide(maxBarWidth) });
+	$('#height-slider').slider({ orientation: 'vertical', min: 0, max: 39, value: 29, slide: slide(inverseBarHeight), change: slide(inverseBarHeight) });
+	$('#color-picker').ColorPicker({
+		color: '#cccccc',
+		flat: true,
+		onChange: function (hsb, hex, rgb) {
+			red(rgb.r); green(rgb.g); blue(rgb.b);
+		}
+	});
 });
 </script>
