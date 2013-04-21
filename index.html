@@ -5,41 +5,41 @@
 </style>
 
 <p>Paste numbers, get bar graph PNGs.
-<p><textarea id="numbers" rows="8">10
-20
-30
-50
-90
-40</textarea>
+<p><textarea id="numbers" rows="8" data-bind="value: numbersString, valueUpdate: 'afterkeydown'"></textarea>
 <hr />
-<div id="bars"></div>
+<div id="bars2" data-bind="foreach: barImageDatas">
+	<div class="bar-container"><img data-bind="attr: { src: src }" /></div>
+</div>
 
 <script src="jquery.js"></script>
 <script src="pnglib.js"></script>
+<script src="knockout.js"></script>
 <script>
-var imageData = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAAAAAAALAAAAAABAAEAAAICTAEAOw==";
 var $numbers = $('#numbers');
 var $bars = $('#bars');
 
-$numbers.on('input propertychange', function () {
-	var numbers = $(this).val().split('\n').map(function (n) { return parseFloat(n) });
-	var min = 0;
-	var max = numbers.slice().filter(isFinite).sort(function (a, b) { return b-a })[0];
-	var barmin = 3, barmax = 200;
-	$bars.empty();
-	numbers.forEach(function (n) {
-		var $container = $('<div />').addClass('bar-container').appendTo($bars);
-		if (isFinite(n)) {
-			var $img = barImage(barmax, 10, barmin + (n - min) / (max - min) * (barmax - barmin));
-			$container.append($img);
-		} else {
-			$container.css({ height: 10 });
-		}
+var numbersString = ko.observable([10, 20, 30, 50, 90, 40].join('\n'));
+var numbers = ko.computed(function () {
+	return numbersString().split('\n').map(function (n) { return parseFloat(n) });
+});
+var maxNumber = ko.computed(function () {
+	return numbers().slice().filter(isFinite).sort(function (a, b) { return b-a })[0];
+});
+var imageDatas = ko.computed(function () {
+	var minvalue = 0, maxvalue = maxNumber();
+	var minbarwidth = 0, maxbarwidth = 200;
+	return numbers().map(function (n) {
+		var barwidth = minbarwidth + (n - minvalue) / (maxvalue - minvalue) * (maxbarwidth - minbarwidth);
+		return { src: barImageData(maxbarwidth, 10, barwidth) };
 	});
 });
-$numbers.trigger('input');
 
-function barImage(width, height, barwidth) {
+ko.applyBindings({
+	numbersString: numbersString,
+	barImageDatas: imageDatas,
+});
+
+function barImageData(width, height, barwidth) {
 	width = Math.max(Math.round(width), 1);
 	height = Math.max(Math.round(height), 1);
 	var p = new PNGlib(width, height, 256); // constructor takes height, weight and color-depth
@@ -51,7 +51,7 @@ function barImage(width, height, barwidth) {
 		}
 	}
 	
-	return $('<img />').attr('src', 'data:image/png;base64,'+p.getBase64());
+	return 'data:image/png;base64,'+p.getBase64();
 }
 
 </script>
