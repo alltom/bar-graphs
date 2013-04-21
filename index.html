@@ -81,8 +81,8 @@ ko.applyBindings({
 
 $(function () {
 	var slide = function (observable) {
-		return function () {
-			observable($(this).slider('value'));
+		return function (e, ui) {
+			observable(ui.value);
 		};
 	};
 	$('#width-slider').slider({ min: 10, max: 700, value: 200, step: 10, slide: slide(maxBarWidth), change: slide(maxBarWidth) });
