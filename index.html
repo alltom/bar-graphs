@@ -30,7 +30,8 @@ $numbers.on('input propertychange', function () {
 	numbers.forEach(function (n) {
 		var $container = $('<div />').addClass('bar-container').appendTo($bars);
 		if (isFinite(n)) {
-			$container.append(barImage(barmin + (n - min) / (max - min) * (barmax - barmin), 10));
+			var $img = barImage(barmax, 10, barmin + (n - min) / (max - min) * (barmax - barmin));
+			$container.append($img);
 		} else {
 			$container.css({ height: 10 });
 		}
@@ -38,11 +39,18 @@ $numbers.on('input propertychange', function () {
 });
 $numbers.trigger('input');
 
-function barImage(width, height) {
+function barImage(width, height, barwidth) {
 	width = Math.max(Math.round(width), 1);
 	height = Math.max(Math.round(height), 1);
-	var p = new PNGlib(width, height, 256); // construcor takes height, weight and color-depth
-	p.color(200, 200, 200, 255); // set the background
+	var p = new PNGlib(width, height, 256); // constructor takes height, weight and color-depth
+	p.color(0, 0, 0, 0); // set the background
+	
+	for (var x = 0; x < barwidth; x++) {
+		for (var y = 0; y < height; y++) {
+			p.buffer[p.index(x, y)] = p.color(0xcc, 0xcc, 0xcc);
+		}
+	}
+	
 	return $('<img />').attr('src', 'data:image/png;base64,'+p.getBase64());
 }
 
